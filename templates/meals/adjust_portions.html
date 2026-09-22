@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Adjust Portions — NutriTrack AI{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div style="width:48px;height:48px;background:#fef9c3;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">⚖️</div>
+    <div>
+        <h2 class="mb-0">Adjust Portion Sizes</h2>
+        <p class="text-muted mb-0" style="font-size:.85rem;">
+            {{ meal.get_meal_type_display }} &middot; {{ meal.uploaded_at|date:"M d, Y H:i" }}
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <div class="nt-alert nt-alert-info mb-4">
+                <span class="nt-alert-icon">ℹ️</span>
+                <span>
+                    Portion sizes are auto-estimated from the bounding-box area. Adjust each item
+                    to match what you actually ate (1–2000g). Nutrition totals recalculate instantly.
+                </span>
+            </div>
+
+            <form method="post" id="adjust-form">
+                {% csrf_token %}
+                {{ formset.management_form }}
+
+                {% for item, form in items_and_forms %}
+                    <div class="card mb-3" style="border:1px solid var(--clr-border);">
+                        <div class="card-body">
+                            <div class="row align-items-center g-3">
+                                <div class="col-md-5">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="food-dot {% if item.food and item.food.is_healthy_flag %}healthy{% elif item.food %}unhealthy{% else %}unknown{% endif %}"
+                                             style="width:12px;height:12px;"></div>
+                                        <div>
+                                            <div class="fw-700">{{ item.detected_label|title }}</div>
+                                            <div style="font-size:.78rem;color:var(--clr-text-muted);">
+                                                Confidence: {{ item.confidence|floatformat:0 }}%
+                                                {% if item.food %}&middot; {{ item.calories|floatformat:0 }} kcal current{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="{{ form.estimated_grams.id_for_label }}">
+                                        Grams (1–2000)
+                                    </label>
+                                    {{ form.estimated_grams }}
+                                    {{ form.id }}
+                                    {% for error in form.estimated_grams.errors %}
+                                        <div class="invalid-feedback d-block" style="font-size:.8rem;">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    {% if item.food %}
+                                        <div style="font-size:.78rem;color:var(--clr-text-muted);">
+                                            <div>P: {{ item.protein_g|floatformat:1 }}g</div>
+                                            <div>C: {{ item.carbs_g|floatformat:1 }}g</div>
+                                            <div>F: {{ item.fat_g|floatformat:1 }}g</div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted" style="font-size:.78rem;">No nutrition record matched</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <div class="d-flex gap-3 mt-4">
+                    <button type="submit" class="btn btn-success btn-icon" id="btn-save-portions">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Recalculate
+                    </button>
+                    <a href="{% url 'meals:result' meal.id %}" class="btn btn-outline-success">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar: meal image -->
+    <div class="col-md-4">
+        <div class="card p-3 sticky-top" style="top:80px;">
+            <h6 class="text-muted text-uppercase fw-bold mb-3" style="font-size:.72rem;letter-spacing:.6px;">Meal Photo</h6>
+            <img src="{{ meal.image.url }}" class="img-fluid rounded" alt="Meal" style="border-radius:var(--radius-md);">
+        </div>
+    </div>
+</div>
+
+{% endblock %}

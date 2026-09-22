@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Upload Meal — NutriTrack AI{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div style="width:48px;height:48px;background:var(--clr-primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📸</div>
+            <div>
+                <h2 class="mb-0">Upload Your Meal</h2>
+                <p class="text-muted mb-0" style="font-size:.85rem;">YOLO will detect every food item in the photo</p>
+            </div>
+        </div>
+
+        <div class="card p-4">
+            <form method="post" enctype="multipart/form-data" id="upload-form">
+                {% csrf_token %}
+
+                <!-- Drag-and-drop upload zone -->
+                <div class="mb-4">
+                    <label class="form-label">Meal Photo</label>
+                    <div class="upload-zone" id="upload-zone">
+                        <span class="upload-icon">🍽️</span>
+                        <p class="fw-600 mb-1" style="font-size:.95rem;">Drag &amp; drop your photo here</p>
+                        <p class="text-muted mb-0" style="font-size:.82rem;">or click to browse — JPEG, PNG, WebP</p>
+                        {{ form.image }}
+                    </div>
+                    <img src="" alt="Preview" class="upload-preview" id="upload-preview">
+                    {% for error in form.image.errors %}
+                        <div class="nt-alert nt-alert-error mt-2">
+                            <span class="nt-alert-icon">⚠️</span><span>{{ error }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Meal Type -->
+                <div class="mb-4">
+                    <label class="form-label" for="{{ form.meal_type.id_for_label }}">Meal Type</label>
+                    <select name="meal_type" id="{{ form.meal_type.id_for_label }}" class="form-select">
+                        {% for val, label in form.meal_type.field.choices %}
+                            <option value="{{ val }}" {% if form.meal_type.value == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 btn-lg btn-icon" id="btn-analyze">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i> Analyze Meal
+                </button>
+            </form>
+        </div>
+
+        <!-- Info Box -->
+        <div class="card p-3 mt-3" style="border-left:4px solid var(--clr-info);">
+            <p class="mb-0" style="font-size:.82rem;color:var(--clr-text-muted);">
+                <strong style="color:var(--clr-info);">💡 Tips for best results:</strong>
+                Good lighting, food filling most of the frame, and a top-down or angled shot
+                helps YOLO detect items accurately. The model currently uses YOLOv8 pretrained
+                on COCO food classes.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Image preview ──────────────────────────────────────────────
+const input   = document.getElementById('id_image');
+const preview = document.getElementById('upload-preview');
+const zone    = document.getElementById('upload-zone');
+const icon    = zone.querySelector('.upload-icon');
+
+input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        icon.textContent = '✅';
+    };
+    reader.readAsDataURL(file);
+});
+
+// ── Drag & drop visual feedback ───────────────────────────────
+zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop',      e => { e.preventDefault(); zone.classList.remove('dragover'); });
+
+// ── Spinner on submit ─────────────────────────────────────────
+document.getElementById('upload-form').addEventListener('submit', function() {
+    if (input.files.length > 0) {
+        document.getElementById('spinner-overlay').classList.add('active');
+    }
+});
+</script>
+{% endblock %}

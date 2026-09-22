@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Meal History — NutriTrack AI{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <div style="width:48px;height:48px;background:var(--clr-primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🕐</div>
+        <div>
+            <h2 class="mb-0">Meal History</h2>
+            <p class="text-muted mb-0" style="font-size:.85rem;">All your logged meals</p>
+        </div>
+    </div>
+    <a href="{% url 'meals:upload' %}" class="btn btn-success btn-icon" id="btn-add-meal">
+        <i class="fa-solid fa-plus"></i> Log a Meal
+    </a>
+</div>
+
+{% if meals.object_list %}
+    <div class="row g-3">
+        {% for meal in meals %}
+        <div class="col-sm-6 col-md-4 col-lg-3">
+            <a href="{% url 'meals:result' meal.id %}" class="text-decoration-none" id="meal-card-{{ meal.id }}">
+                <div class="meal-card">
+                    <img src="{{ meal.image.url }}" class="meal-card-img" alt="{{ meal.get_meal_type_display }}">
+                    <div class="meal-card-body">
+                        <span class="meal-type-badge {{ meal.meal_type }}">{{ meal.get_meal_type_display }}</span>
+                        <div class="fw-700 mb-1" style="font-size:.95rem;">{{ meal.total_calories|floatformat:0 }} kcal</div>
+                        <div style="font-size:.78rem;color:var(--clr-text-muted);">{{ meal.uploaded_at|date:"M d, Y H:i" }}</div>
+                        {% if meal.detected_items.count > 0 %}
+                            <div style="font-size:.75rem;color:var(--clr-text-light);margin-top:4px;">
+                                {{ meal.detected_items.count }} item{{ meal.detected_items.count|pluralize }} detected
+                            </div>
+                        {% endif %}
+                        <div class="mt-auto pt-2">
+                            <span class="btn btn-sm btn-outline-success w-100 mt-1" style="font-size:.78rem;">View Details →</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if meals.has_other_pages %}
+    <nav class="mt-4 d-flex justify-content-center" aria-label="Meal history pagination">
+        <ul class="pagination gap-1">
+            {% if meals.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ meals.previous_page_number }}"
+                       style="border-radius:var(--radius-sm);">‹ Prev</a>
+                </li>
+            {% endif %}
+            {% for num in meals.paginator.page_range %}
+                <li class="page-item {% if meals.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}"
+                       style="border-radius:var(--radius-sm);">{{ num }}</a>
+                </li>
+            {% endfor %}
+            {% if meals.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ meals.next_page_number }}"
+                       style="border-radius:var(--radius-sm);">Next ›</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <h4>No meals logged yet</h4>
+        <p style="font-size:.9rem;">Upload your first meal photo to start tracking nutrition.</p>
+        <a href="{% url 'meals:upload' %}" class="btn btn-success btn-icon mt-2">
+            <i class="fa-solid fa-camera-retro"></i> Upload First Meal
+        </a>
+    </div>
+{% endif %}
+
+{% endblock %}

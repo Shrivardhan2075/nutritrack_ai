@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}NutriTrack AI — AI-Powered Meal Nutrition Tracker{% endblock %}
+{% block content %}
+
+<!-- Hero Section -->
+<div class="hero mb-5">
+    <span class="badge-pill">🤖 Powered by YOLO Object Detection</span>
+    <h1>Snap Your Meal.<br>Know Your Nutrition.</h1>
+    <p>
+        Upload a photo of any meal. NutriTrack AI detects every food item on your
+        plate with bounding boxes, estimates portion sizes, and calculates calories,
+        protein, carbs, fat and fiber — automatically.
+    </p>
+    {% if user.is_authenticated %}
+        <a href="{% url 'meals:upload' %}" class="btn btn-lg btn-success btn-icon me-3" id="cta-upload">
+            <i class="fa-solid fa-camera-retro"></i> Analyze a Meal
+        </a>
+        <a href="{% url 'dashboard_app:dashboard' %}" class="btn btn-lg btn-icon"
+           style="background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);color:#fff;">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+        </a>
+    {% else %}
+        <a href="{% url 'accounts:signup' %}" class="btn btn-lg btn-success btn-icon me-3" id="cta-signup">
+            <i class="fa-solid fa-leaf"></i> Get Started Free
+        </a>
+        <a href="{% url 'accounts:login' %}" class="btn btn-lg btn-icon"
+           style="background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);color:#fff;" id="cta-login">
+            Login
+        </a>
+    {% endif %}
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-5 text-center">
+    <div class="col-4">
+        <div class="py-3">
+            <div style="font-size:2rem;font-weight:800;color:var(--clr-primary);">30+</div>
+            <div style="font-size:.8rem;color:var(--clr-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Foods in DB</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="py-3">
+            <div style="font-size:2rem;font-weight:800;color:var(--clr-primary);">7</div>
+            <div style="font-size:.8rem;color:var(--clr-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Nutrients Tracked</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="py-3">
+            <div style="font-size:2rem;font-weight:800;color:var(--clr-primary);">YOLO</div>
+            <div style="font-size:.8rem;color:var(--clr-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">v8 Detection</div>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h5 class="fw-700 mb-2">Multi-Food Detection</h5>
+            <p class="text-muted mb-0" style="font-size:.9rem;">
+                YOLO detects every distinct food item in one photo, drawing bounding boxes
+                with confidence scores — not just a single label.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h5 class="fw-700 mb-2">Instant Nutrition</h5>
+            <p class="text-muted mb-0" style="font-size:.9rem;">
+                Calories, protein, carbs, fat, fiber, sugar and sodium — calculated
+                automatically and fully adjustable before saving.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <h5 class="fw-700 mb-2">Trends & Reports</h5>
+            <p class="text-muted mb-0" style="font-size:.9rem;">
+                Daily, weekly and monthly dashboards with interactive Chart.js graphs
+                and personalised recommendations.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="card p-4 p-md-5 mb-5">
+    <h2 class="section-title">How it Works</h2>
+    <div class="row g-0">
+        <div class="col-md-6">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div>
+                    <h6 class="fw-700 mb-1">Upload a Meal Photo</h6>
+                    <p class="text-muted mb-0" style="font-size:.88rem;">Take a photo of your plate and upload it. Supported: JPEG, PNG, WebP.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div>
+                    <h6 class="fw-700 mb-1">YOLO Detects Every Item</h6>
+                    <p class="text-muted mb-0" style="font-size:.88rem;">The model draws a bounding box around each food item with a confidence score.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div>
+                    <h6 class="fw-700 mb-1">Adjust Portion Sizes</h6>
+                    <p class="text-muted mb-0" style="font-size:.88rem;">Auto-estimated from bounding-box area — you can fine-tune each item's grams before saving.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div>
+                    <h6 class="fw-700 mb-1">Get Nutrition + Recommendations</h6>
+                    <p class="text-muted mb-0" style="font-size:.88rem;">Full macro breakdown and smart, rule-based diet recommendations — all explainable.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

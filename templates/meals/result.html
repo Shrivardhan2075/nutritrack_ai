@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Meal Analysis — NutriTrack AI{% endblock %}
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <div style="width:48px;height:48px;background:var(--clr-primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🍽️</div>
+        <div>
+            <h2 class="mb-0">Meal Analysis</h2>
+            <p class="text-muted mb-0" style="font-size:.85rem;">
+                {{ meal.get_meal_type_display }} &middot; {{ meal.uploaded_at|date:"M d, Y H:i" }}
+            </p>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        {% if items %}
+            <a href="{% url 'meals:adjust_portions' meal.id %}" class="btn btn-outline-success btn-icon" id="btn-adjust">
+                <i class="fa-solid fa-sliders"></i> Adjust Portions
+            </a>
+        {% endif %}
+        <a href="{% url 'meals:upload' %}" class="btn btn-success btn-icon" id="btn-new-meal">
+            <i class="fa-solid fa-plus"></i> New Meal
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ── Left: Image with bounding boxes ── -->
+    <div class="col-lg-7">
+        <div class="card p-3">
+            <div class="position-relative d-inline-block w-100" id="img-wrap">
+                <img id="meal-img" src="{{ meal.image.url }}"
+                     class="img-fluid rounded"
+                     style="width:100%;border-radius:var(--radius-md);"
+                     alt="Uploaded meal">
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Right: Stats, items, recommendations ── -->
+    <div class="col-lg-5">
+
+        <!-- Nutrition Summary -->
+        <div class="card p-4 mb-3">
+            <h5 class="section-title">Nutrition Summary</h5>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div style="background:var(--clr-primary-light);border-radius:var(--radius-sm);padding:14px;text-align:center;">
+                        <div style="font-size:1.6rem;font-weight:800;color:var(--clr-primary);">{{ meal.total_calories|floatformat:0 }}</div>
+                        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--clr-primary-dark);">kcal</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="row g-1">
+                        <div class="col-12">
+                            <div style="background:#eff6ff;border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:.75rem;font-weight:600;color:#1e40af;">Protein</span>
+                                <span style="font-size:.85rem;font-weight:700;color:#1e40af;">{{ meal.total_protein_g|floatformat:1 }}g</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="background:#fefce8;border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:.75rem;font-weight:600;color:#854d0e;">Carbs</span>
+                                <span style="font-size:.85rem;font-weight:700;color:#854d0e;">{{ meal.total_carbs_g|floatformat:1 }}g</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="background:#fef2f2;border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:.75rem;font-weight:600;color:#991b1b;">Fat</span>
+                                <span style="font-size:.85rem;font-weight:700;color:#991b1b;">{{ meal.total_fat_g|floatformat:1 }}g</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Macro ring chart -->
+            {% if meal.total_calories > 0 %}
+            <div style="max-width:140px;margin:0 auto;">
+                <canvas id="macroRingChart"></canvas>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Detected Items -->
+        <div class="card p-4 mb-3">
+            <h5 class="section-title">Detected Items ({{ items|length }})</h5>
+            {% for item in items %}
+                <div class="food-item-row">
+                    <div class="food-dot {% if item.food and item.food.is_healthy_flag %}healthy{% elif item.food %}unhealthy{% else %}unknown{% endif %}"></div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <span class="fw-600" style="font-size:.9rem;">{{ item.detected_label|title }}</span>
+                            <span style="font-size:.8rem;color:var(--clr-text-muted);">{{ item.estimated_grams|floatformat:0 }}g</span>
+                        </div>
+                        <div class="d-flex justify-content-between" style="font-size:.78rem;color:var(--clr-text-muted);">
+                            <span>Confidence: {{ item.confidence|floatformat:0 }}%</span>
+                            <span>{{ item.calories|floatformat:0 }} kcal</span>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="empty-state py-2">
+                    <div class="empty-icon" style="font-size:2rem;">🔍</div>
+                    <h4>No items detected</h4>
+                    <p style="font-size:.85rem;">
+                        Try a photo with better lighting and food closer to the camera.
+                        <a href="{% url 'meals:adjust_portions' meal.id %}">Add manually?</a>
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card p-4">
+            <h5 class="section-title">Recommendations</h5>
+            {% for tip in recommendations %}
+                <div class="tip-card">
+                    <span class="tip-icon">💡</span>
+                    <span>{{ tip }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<!-- Nav row -->
+<div class="mt-4">
+    <a href="{% url 'dashboard_app:dashboard' %}" class="btn btn-success btn-icon me-2" id="btn-dashboard">
+        <i class="fa-solid fa-chart-line"></i> View Dashboard
+    </a>
+    <a href="{% url 'meals:history' %}" class="btn btn-outline-success btn-icon">
+        <i class="fa-solid fa-clock-rotate-left"></i> Meal History
+    </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+// ── Bounding box overlay ─────────────────────────────────────
+const boxes = [
+    {% for item in items %}
+    {
+        label: "{{ item.detected_label|escapejs }}",
+        conf: {{ item.confidence }},
+        x1: {{ item.bbox_x1 }}, y1: {{ item.bbox_y1 }},
+        x2: {{ item.bbox_x2 }}, y2: {{ item.bbox_y2 }},
+        healthy: {% if item.food and item.food.is_healthy_flag %}true{% else %}false{% endif %}
+    },
+    {% endfor %}
+];
+
+const img  = document.getElementById('meal-img');
+const wrap = document.getElementById('img-wrap');
+const COLORS = { healthy: '#16a34a', neutral: '#f59e0b' };
+
+function drawBoxes() {
+    document.querySelectorAll('.bbox-label').forEach(el => el.remove());
+    if (!img.naturalWidth) return;
+    const scaleX = img.clientWidth  / img.naturalWidth;
+    const scaleY = img.clientHeight / img.naturalHeight;
+    boxes.forEach(b => {
+        const color = b.healthy ? COLORS.healthy : COLORS.neutral;
+        const div = document.createElement('div');
+        div.className = 'bbox-label';
+        div.style.cssText = [
+            `left:${b.x1 * scaleX}px`,
+            `top:${b.y1 * scaleY}px`,
+            `width:${(b.x2 - b.x1) * scaleX}px`,
+            `height:${(b.y2 - b.y1) * scaleY}px`,
+            `border-color:${color}`,
+        ].join(';');
+        div.innerHTML = `<span style="background:${color}">${b.label} ${(b.conf*100).toFixed(0)}%</span>`;
+        wrap.appendChild(div);
+    });
+}
+if (img.complete && img.naturalWidth) drawBoxes();
+else img.addEventListener('load', drawBoxes);
+window.addEventListener('resize', drawBoxes);
+
+// ── Macro ring chart ─────────────────────────────────────────
+const macroCanvas = document.getElementById('macroRingChart');
+if (macroCanvas) {
+    new Chart(macroCanvas, {
+        type: 'doughnut',
+        data: {
+            labels: ['Protein', 'Carbs', 'Fat'],
+            datasets: [{
+                data: [
+                    {{ meal.total_protein_g|floatformat:1 }},
+                    {{ meal.total_carbs_g|floatformat:1 }},
+                    {{ meal.total_fat_g|floatformat:1 }}
+                ],
+                backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            cutout: '68%',
+            plugins: { legend: { display: false }, tooltip: {
+                callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}g` }
+            }}
+        }
+    });
+}
+</script>
+{% endblock %}

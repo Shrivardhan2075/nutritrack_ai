@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Login — NutriTrack AI{% endblock %}
+{% block content %}
+<div class="row justify-content-center" style="min-height: 70vh; align-items: center;">
+    <div class="col-md-5">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <div class="auth-logo">🥗</div>
+                <h2>Welcome back</h2>
+                <p class="auth-sub">Sign in to your NutriTrack AI account</p>
+            </div>
+
+            <form method="post" id="login-form">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% if field.field.widget.input_type == 'password' %}
+                            <input type="password"
+                                   name="{{ field.html_name }}"
+                                   id="{{ field.id_for_label }}"
+                                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                   autocomplete="current-password">
+                        {% else %}
+                            <input type="{{ field.field.widget.input_type }}"
+                                   name="{{ field.html_name }}"
+                                   id="{{ field.id_for_label }}"
+                                   value="{{ field.value|default:'' }}"
+                                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                   autocomplete="username">
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                {% if form.non_field_errors %}
+                    <div class="nt-alert nt-alert-error mb-3">
+                        <span class="nt-alert-icon">⚠️</span>
+                        <span>{{ form.non_field_errors|join:", " }}</span>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-success w-100 btn-lg mt-2" id="btn-login">
+                    <i class="fa-solid fa-right-to-bracket me-1"></i> Sign In
+                </button>
+            </form>
+
+            <hr class="my-4">
+            <p class="text-center mb-0" style="font-size:.9rem;">
+                Don't have an account?
+                <a href="{% url 'accounts:signup' %}" class="fw-600" style="color:var(--clr-primary);">Sign up free</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

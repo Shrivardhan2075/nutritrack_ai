@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Your Profile — NutriTrack AI{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div style="width:50px;height:50px;background:var(--clr-primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">👤</div>
+    <div>
+        <h2 class="mb-0">{{ request.user.username }}'s Profile</h2>
+        <p class="text-muted mb-0" style="font-size:.85rem;">Manage your stats and goals</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ── Form Column ───────────────────────── -->
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h5 class="section-title">Personal Stats</h5>
+            <form method="post" id="profile-form">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label" for="{{ form.height_cm.id_for_label }}">Height (cm)</label>
+                        <input type="number" name="height_cm" id="{{ form.height_cm.id_for_label }}"
+                               value="{{ form.height_cm.value|default:'' }}"
+                               class="form-control {% if form.height_cm.errors %}is-invalid{% endif %}"
+                               step="0.1" min="50" max="300">
+                        {% for e in form.height_cm.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="{{ form.weight_kg.id_for_label }}">Weight (kg)</label>
+                        <input type="number" name="weight_kg" id="{{ form.weight_kg.id_for_label }}"
+                               value="{{ form.weight_kg.value|default:'' }}"
+                               class="form-control {% if form.weight_kg.errors %}is-invalid{% endif %}"
+                               step="0.1" min="10" max="500">
+                        {% for e in form.weight_kg.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="{{ form.age.id_for_label }}">Age</label>
+                        <input type="number" name="age" id="{{ form.age.id_for_label }}"
+                               value="{{ form.age.value|default:'' }}"
+                               class="form-control {% if form.age.errors %}is-invalid{% endif %}"
+                               min="1" max="120">
+                        {% for e in form.age.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                        <select name="gender" id="{{ form.gender.id_for_label }}" class="form-select">
+                            <option value="">— Select —</option>
+                            {% for val, label in form.gender.field.choices %}
+                                {% if val %}
+                                    <option value="{{ val }}" {% if form.gender.value == val %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="{{ form.activity_level.id_for_label }}">Activity Level</label>
+                        <select name="activity_level" id="{{ form.activity_level.id_for_label }}" class="form-select">
+                            {% for val, label in form.activity_level.field.choices %}
+                                <option value="{{ val }}" {% if form.activity_level.value == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="{{ form.goal.id_for_label }}">Goal</label>
+                        <select name="goal" id="{{ form.goal.id_for_label }}" class="form-select">
+                            {% for val, label in form.goal.field.choices %}
+                                <option value="{{ val }}" {% if form.goal.value == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success btn-icon mt-4" id="btn-save-profile">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Stats Column ─────────────────────── -->
+    <div class="col-md-5">
+        <!-- BMI Card -->
+        <div class="card p-4 mb-3 text-center">
+            <h6 class="text-muted text-uppercase fw-bold" style="font-size:.75rem;letter-spacing:.6px;">Body Mass Index</h6>
+            {% if profile.bmi %}
+                <div class="bmi-gauge mt-2">
+                    <div class="bmi-value text-gradient">{{ profile.bmi }}</div>
+                    <div class="mt-2">
+                        <span class="bmi-badge
+                            {% if profile.bmi_category == 'Normal' %}bmi-normal
+                            {% elif profile.bmi_category == 'Underweight' %}bmi-underweight
+                            {% elif profile.bmi_category == 'Overweight' %}bmi-overweight
+                            {% else %}bmi-obese{% endif %}">
+                            {{ profile.bmi_category }}
+                        </span>
+                    </div>
+                    <!-- Visual Range Bar -->
+                    <div class="mt-3" style="font-size:.75rem;color:var(--clr-text-muted);">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                            <span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span>
+                        </div>
+                        <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;">
+                            <div style="flex:3.5;background:#dbeafe;"></div>
+                            <div style="flex:6.5;background:#dcfce7;"></div>
+                            <div style="flex:5;background:#fef9c3;"></div>
+                            <div style="flex:10;background:#fee2e2;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                            <span>Under</span><span>Normal</span><span>Over</span><span>Obese</span>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state py-3">
+                    <div class="empty-icon" style="font-size:2rem;">📏</div>
+                    <p style="font-size:.85rem;">Fill in height, weight and age to see your BMI</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Calorie Target Card -->
+        <div class="card p-4 mb-3">
+            <h6 class="text-muted text-uppercase fw-bold mb-3" style="font-size:.75rem;letter-spacing:.6px;">Daily Calorie Target</h6>
+            <div style="font-size:2.2rem;font-weight:800;color:var(--clr-primary);">
+                {{ profile.daily_calorie_target }} <span style="font-size:1rem;font-weight:500;color:var(--clr-text-muted);">kcal</span>
+            </div>
+            <p style="font-size:.78rem;color:var(--clr-text-muted);margin-top:6px;margin-bottom:0;">
+                Goal: {{ profile.get_goal_display }}
+            </p>
+        </div>
+
+        <!-- Formula Card -->
+        <div class="card p-4" style="border-left:4px solid var(--clr-info);">
+            <h6 class="fw-700 mb-2" style="font-size:.82rem;color:var(--clr-info);">
+                <i class="fa-solid fa-flask me-1"></i> Mifflin-St Jeor Formula
+            </h6>
+            <p style="font-size:.78rem;color:var(--clr-text-muted);margin-bottom:8px;">
+                <strong>Male BMR</strong> = 10W + 6.25H − 5A + 5<br>
+                <strong>Female BMR</strong> = 10W + 6.25H − 5A − 161<br>
+                <em>(W=kg, H=cm, A=age)</em>
+            </p>
+            <p style="font-size:.78rem;color:var(--clr-text-muted);margin-bottom:0;">
+                TDEE = BMR × activity multiplier<br>
+                Adjusted ±500 kcal for weight goal.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
