@@ -86,7 +86,11 @@
     <div class="col-md-4">
         <div class="card p-3 sticky-top" style="top:80px;">
             <h6 class="text-muted text-uppercase fw-bold mb-3" style="font-size:.72rem;letter-spacing:.6px;">Meal Photo</h6>
-            <img src="{{ meal.image.url }}" class="img-fluid rounded" alt="Meal" style="border-radius:var(--radius-md);">
+            {% if meal.image %}
+                <img src="{{ meal.image.url }}" class="img-fluid rounded" alt="Meal" style="border-radius:var(--radius-md);">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light rounded text-muted fs-1" style="height:200px;border-radius:var(--radius-md);">🥗</div>
+            {% endif %}
         </div>
     </div>
 </div>

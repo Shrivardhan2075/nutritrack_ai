@@ -21,7 +21,11 @@
         <div class="col-sm-6 col-md-4 col-lg-3">
             <a href="{% url 'meals:result' meal.id %}" class="text-decoration-none" id="meal-card-{{ meal.id }}">
                 <div class="meal-card">
-                    <img src="{{ meal.image.url }}" class="meal-card-img" alt="{{ meal.get_meal_type_display }}">
+                    {% if meal.image %}
+                        <img src="{{ meal.image.url }}" class="meal-card-img" alt="{{ meal.get_meal_type_display }}">
+                    {% else %}
+                        <div class="meal-card-img d-flex align-items-center justify-content-center bg-light fs-1 text-muted" style="height:180px;">🥗</div>
+                    {% endif %}
                     <div class="meal-card-body">
                         <span class="meal-type-badge {{ meal.meal_type }}">{{ meal.get_meal_type_display }}</span>
                         <div class="fw-700 mb-1" style="font-size:.95rem;">{{ meal.total_calories|floatformat:0 }} kcal</div>
