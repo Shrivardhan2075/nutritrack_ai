@@ -14,11 +14,9 @@
         </div>
     </div>
     <div class="d-flex gap-2">
-        {% if items %}
-            <a href="{% url 'meals:adjust_portions' meal.id %}" class="btn btn-outline-success btn-icon" id="btn-adjust">
-                <i class="fa-solid fa-sliders"></i> Adjust Portions
-            </a>
-        {% endif %}
+        <a href="{% url 'meals:adjust_portions' meal.id %}" class="btn btn-outline-success btn-icon" id="btn-adjust">
+            <i class="fa-solid fa-sliders"></i> Adjust Portions
+        </a>
         <a href="{% url 'meals:upload' %}" class="btn btn-success btn-icon" id="btn-new-meal">
             <i class="fa-solid fa-plus"></i> New Meal
         </a>
@@ -90,9 +88,11 @@
 
         <!-- Detected Items -->
         <div class="card p-4 mb-3">
-            <h5 class="section-title">Detected Items ({{ items|length }})</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="section-title mb-0">Logged Items ({{ items|length }})</h5>
+            </div>
             {% for item in items %}
-                <div class="food-item-row">
+                <div class="food-item-row d-flex align-items-center gap-2 mb-2">
                     <div class="food-dot {% if item.food and item.food.is_healthy_flag %}healthy{% elif item.food %}unhealthy{% else %}unknown{% endif %}"></div>
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-baseline">
@@ -100,21 +100,49 @@
                             <span style="font-size:.8rem;color:var(--clr-text-muted);">{{ item.estimated_grams|floatformat:0 }}g</span>
                         </div>
                         <div class="d-flex justify-content-between" style="font-size:.78rem;color:var(--clr-text-muted);">
-                            <span>Confidence: {{ item.confidence|floatformat:0 }}%</span>
-                            <span>{{ item.calories|floatformat:0 }} kcal</span>
+                            <span>Conf: {{ item.confidence|floatformat:0 }}%</span>
+                            <span class="fw-bold text-success">{{ item.calories|floatformat:0 }} kcal</span>
                         </div>
                     </div>
+                    <form method="post" action="{% url 'meals:delete_item' meal.id item.id %}" class="m-0 p-0" onsubmit="return confirm('Remove this item?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-link text-danger p-1" title="Remove item">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
                 </div>
             {% empty %}
-                <div class="empty-state py-2">
+                <div class="empty-state py-2 mb-3">
                     <div class="empty-icon" style="font-size:2rem;">🔍</div>
-                    <h4>No items detected</h4>
-                    <p style="font-size:.85rem;">
-                        Try a photo with better lighting and food closer to the camera.
-                        <a href="{% url 'meals:adjust_portions' meal.id %}">Add manually?</a>
+                    <h4>No items detected by AI</h4>
+                    <p style="font-size:.85rem;color:var(--clr-text-muted);">
+                        The standard AI model detects basic COCO food items. Select your food items manually below to calculate exact calories & macros!
                     </p>
                 </div>
             {% endfor %}
+
+            <!-- Manual Item Addition Form -->
+            <div class="border-top pt-3 mt-2">
+                <h6 class="fw-bold mb-2" style="font-size:.85rem;color:var(--clr-primary-dark);">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Add Food Manually
+                </h6>
+                <form method="post" action="{% url 'meals:add_item' meal.id %}" class="row g-2 align-items-end">
+                    {% csrf_token %}
+                    <div class="col-7">
+                        <label class="form-label mb-1" style="font-size:.75rem;">Food Item</label>
+                        {{ add_form.food }}
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label mb-1" style="font-size:.75rem;">Grams</label>
+                        {{ add_form.estimated_grams }}
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-success btn-sm w-100 py-2" title="Add Food">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Recommendations -->

@@ -6,8 +6,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from PIL import Image, UnidentifiedImageError
 
-from .forms import MealUploadForm, PortionAdjustFormSet
-from .models import Meal
+from .forms import AddManualItemForm, MealUploadForm, PortionAdjustFormSet
+from .models import DetectedFoodItem, Meal
 from .services.detector import DetectionError, detect_foods
 from .services.nutrition_engine import generate_recommendations, process_detections
 
@@ -71,8 +71,8 @@ def upload_view(request):
                 messages.warning(
                     request,
                     "No food items were detected in this photo. "
-                    "Tips: use good lighting, get closer to the food, and make sure "
-                    "food fills most of the frame. You can still adjust portions manually."
+                    "Tips: standard AI model recognizes standard COCO classes (pizza, banana, sandwich, etc.). "
+                    "You can easily add items like Rice, Bread, Curry, etc. manually below to calculate calories!"
                 )
                 return redirect("meals:result", meal_id=meal.id)
 
@@ -90,11 +90,53 @@ def result_view(request, meal_id):
     meal = get_object_or_404(Meal, id=meal_id, user=request.user)
     items = meal.detected_items.select_related("food").all()
     recommendations = generate_recommendations(meal)
+    add_form = AddManualItemForm()
     return render(request, "meals/result.html", {
         "meal": meal,
         "items": items,
         "recommendations": recommendations,
+        "add_form": add_form,
     })
+
+
+@login_required
+def add_item_view(request, meal_id):
+    meal = get_object_or_404(Meal, id=meal_id, user=request.user)
+    if request.method == "POST":
+        form = AddManualItemForm(request.POST)
+        if form.is_valid():
+            food = form.cleaned_data["food"]
+            grams = form.cleaned_data["estimated_grams"]
+            scaled = food.scaled(grams)
+            DetectedFoodItem.objects.create(
+                meal=meal,
+                food=food,
+                detected_label=food.name,
+                confidence=1.0,
+                bbox_x1=0, bbox_y1=0, bbox_x2=0, bbox_y2=0,
+                estimated_grams=grams,
+                calories=scaled["calories"],
+                protein_g=scaled["protein_g"],
+                carbs_g=scaled["carbs_g"],
+                fat_g=scaled["fat_g"],
+                fiber_g=scaled["fiber_g"],
+                sugar_g=scaled["sugar_g"],
+                sodium_mg=scaled["sodium_mg"],
+            )
+            meal.recompute_totals()
+            messages.success(request, f"Added {food.name} ({grams}g) — {scaled['calories']:.0f} kcal added!")
+    return redirect("meals:result", meal_id=meal.id)
+
+
+@login_required
+def delete_item_view(request, meal_id, item_id):
+    meal = get_object_or_404(Meal, id=meal_id, user=request.user)
+    item = get_object_or_404(DetectedFoodItem, id=item_id, meal=meal)
+    if request.method == "POST":
+        item.delete()
+        meal.recompute_totals()
+        messages.info(request, "Item removed from meal.")
+    return redirect("meals:result", meal_id=meal.id)
 
 
 @login_required
@@ -106,10 +148,7 @@ def adjust_portions_view(request, meal_id):
     """
     meal = get_object_or_404(Meal, id=meal_id, user=request.user)
     queryset = meal.detected_items.select_related("food").all()
-
-    if not queryset.exists():
-        messages.info(request, "No detected items to adjust for this meal.")
-        return redirect("meals:result", meal_id=meal.id)
+    add_form = AddManualItemForm()
 
     if request.method == "POST":
         formset = PortionAdjustFormSet(request.POST, queryset=queryset)
@@ -130,6 +169,7 @@ def adjust_portions_view(request, meal_id):
         "meal": meal,
         "formset": formset,
         "items_and_forms": zip(queryset, formset.forms),
+        "add_form": add_form,
     })
 
 

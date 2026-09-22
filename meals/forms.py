@@ -53,3 +53,24 @@ PortionAdjustFormSet = modelformset_factory(
     extra=0,
     can_delete=False,
 )
+
+
+class AddManualItemForm(forms.Form):
+    food = forms.ModelChoiceField(
+        queryset=None,
+        widget=forms.Select(attrs={"class": "form-select", "id": "id_manual_food"}),
+        label="Select Food Item",
+    )
+    estimated_grams = PortionGramsField(
+        min_value=1,
+        max_value=2000,
+        initial=100,
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "1", "id": "id_manual_grams"}),
+        label="Portion (Grams)",
+    )
+
+    def __init__(self, *args, **kwargs):
+        from nutrition.models import FoodNutrition
+        super().__init__(*args, **kwargs)
+        self.fields["food"].queryset = FoodNutrition.objects.all().order_by("name")
+
